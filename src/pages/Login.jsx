@@ -81,7 +81,7 @@ export default function Login() {
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div className="logo" style={{ fontSize: '22px', marginBottom: '8px' }}>KENDACHI</div>
           <div className="mono" style={{ fontSize: '11px', color: 'var(--dim)', letterSpacing: '1px' }}>
-            EMPLOYEE JUSTICE &amp; AUDIT PLATFORM
+            ACCOUNTABLE WORK &amp; CORRECTION GOVERNANCE
           </div>
         </div>
 
@@ -171,7 +171,7 @@ export default function Login() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
-          {['OTP AUTH', 'IP BOUND', 'ENCRYPTED', 'IMMUTABLE'].map(t => (
+          {['OTP AUTH', 'IP BOUND', 'AUDITED', 'GOVERNED'].map(t => (
             <span key={t} className="pill pill-dim">{t}</span>
           ))}
         </div>
