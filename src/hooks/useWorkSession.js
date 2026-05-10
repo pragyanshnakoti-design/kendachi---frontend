@@ -12,6 +12,8 @@ const DEFAULT_CONFIG = {
   hidden_alert_seconds: 30,
 }
 
+const HEARTBEAT_CACHE_KEY = 'kendachi_pending_heartbeats'
+
 function computeMonitoringScore(metrics) {
   const idlePenalty = Math.min(30, Math.floor(metrics.idle_seconds / 10) * 6)
   const hiddenPenalty = Math.min(25, Math.floor(metrics.hidden_seconds / 10) * 5)
@@ -151,6 +153,36 @@ export function useWorkSession() {
     }
   }
 
+  function queueHeartbeat(payload) {
+    try {
+      const pending = JSON.parse(localStorage.getItem(HEARTBEAT_CACHE_KEY) || '[]')
+      pending.push({ ...payload, cached_at: new Date().toISOString() })
+      localStorage.setItem(HEARTBEAT_CACHE_KEY, JSON.stringify(pending.slice(-20)))
+      pushSignal('NETWORK GAP: heartbeat cached locally', 'amber')
+    } catch (_) {}
+  }
+
+  async function flushHeartbeatCache() {
+    let pending = []
+    try {
+      pending = JSON.parse(localStorage.getItem(HEARTBEAT_CACHE_KEY) || '[]')
+    } catch (_) {
+      pending = []
+    }
+    if (!pending.length) return
+
+    const remaining = []
+    for (const payload of pending) {
+      try {
+        await session.heartbeat(payload)
+      } catch (_) {
+        remaining.push(payload)
+      }
+    }
+    localStorage.setItem(HEARTBEAT_CACHE_KEY, JSON.stringify(remaining.slice(-20)))
+    if (!remaining.length) pushSignal('NETWORK GAP RESOLVED: cached heartbeats synced', 'green')
+  }
+
   function updateLocalScore() {
     const score = computeMonitoringScore(currentMetrics())
     setMonitoringScore(score)
@@ -193,13 +225,15 @@ export function useWorkSession() {
   async function doHeartbeat(nextElapsed) {
     if (!workSessionId) return
     setSaveStatus('saving')
+    const payload = {
+      work_session_id: workSessionId,
+      elapsed_seconds: nextElapsed,
+      is_idle: idleSecondsRef.current >= config.idle_threshold_seconds,
+      ...currentMetrics(),
+    }
     try {
-      const response = await session.heartbeat({
-        work_session_id: workSessionId,
-        elapsed_seconds: nextElapsed,
-        is_idle: idleSecondsRef.current >= config.idle_threshold_seconds,
-        ...currentMetrics(),
-      })
+      const response = await session.heartbeat(payload)
+      await flushHeartbeatCache()
       if (typeof response.monitoring_score === 'number') {
         setMonitoringScore(response.monitoring_score)
       } else {
@@ -212,6 +246,7 @@ export function useWorkSession() {
       setSaveStatus('saved')
     } catch (e) {
       setSaveStatus('error')
+      queueHeartbeat(payload)
     }
   }
 
