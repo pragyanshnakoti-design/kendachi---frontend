@@ -45,6 +45,7 @@ export default function EmployeeDashboard() {
   const [showStop, setShowStop] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [loadingRec, setLoadingRec] = useState(false)
+  const [notifications, setNotifications] = useState([])
 
   useEffect(() => {
     if (tab === 'history') {
@@ -53,6 +54,9 @@ export default function EmployeeDashboard() {
     }
     if (tab === 'overtime') {
       overtime.my().then(d => setOtRequests(d.requests || []))
+    }
+    if (tab === 'notices') {
+      employee.notifications().then(d => setNotifications(d.notifications || [])).catch(() => {})
     }
   }, [tab, ws.running])
 
@@ -156,7 +160,7 @@ export default function EmployeeDashboard() {
         {ws.error && <div className="error-box" style={{ marginBottom: '14px' }}>{ws.error}</div>}
 
         <div className="tabs">
-          {['timer', 'history', 'overtime'].map(t => (
+          {['timer', 'history', 'notices', 'overtime'].map(t => (
             <button key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
               {t.toUpperCase()}
             </button>
@@ -426,6 +430,41 @@ export default function EmployeeDashboard() {
 
             <div className="info-box" style={{ marginTop: '12px' }}>
               This history now stores monitoring score, hidden-tab duration, focus breaks, and live-presence failures in addition to time totals.
+            </div>
+          </div>
+        )}
+
+        {tab === 'notices' && (
+          <div className="fade-up">
+            <span className="section-title">CORRECTION NOTIFICATIONS</span>
+            <div className="card" style={{ marginTop: '12px' }}>
+              <div style={{ display: 'grid', gap: '10px', padding: '14px' }}>
+                {notifications.length === 0 && (
+                  <div className="mono" style={{ color: 'var(--dim)', fontSize: '11px', textAlign: 'center', padding: '24px' }}>
+                    No correction notices yet.
+                  </div>
+                )}
+                {notifications.map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      background: 'var(--surface2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      padding: '12px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                      <span style={{ color: 'var(--text)', fontWeight: 600 }}>{n.title}</span>
+                      <span className="mono" style={{ color: 'var(--dim)', fontSize: '10px' }}>{fmtDateTime(n.created_at)}</span>
+                    </div>
+                    <div style={{ color: 'var(--text2)', fontSize: '12px' }}>{n.message}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="info-box" style={{ marginTop: '12px' }}>
+              Any change proposed against your time record appears here, including approval status and reason.
             </div>
           </div>
         )}
