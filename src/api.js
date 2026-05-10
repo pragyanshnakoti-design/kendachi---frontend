@@ -64,6 +64,8 @@ export const employee = {
   },
   record:      (id)            => get(`/api/employee/records/${id}`),
   today:       ()              => get('/api/employee/today'),
+  notifications: ()            => get('/api/employee/notifications'),
+  dispute:     (data)          => post('/api/employee/disputes', data),
   exportProof: (params = {})   => {
     const q = new URLSearchParams(params).toString()
     return get(`/api/employee/export${q ? '?' + q : ''}`)
@@ -78,6 +80,7 @@ export const manager = {
     return get(`/api/manager/hours${q ? '?' + q : ''}`)
   },
   otQueue:     ()              => get('/api/manager/overtime-queue'),
+  proposeCorrection: (data)    => post('/api/manager/corrections/propose', data),
 }
 
 // ── Admin ────────────────────────────────────────────────
@@ -93,6 +96,10 @@ export const admin = {
     return get(`/api/admin/audit-log${q ? '?' + q : ''}`)
   },
   anomalies:   ()              => get('/api/admin/anomalies'),
+  corrections: (status = 'pending') => get(`/api/admin/corrections?status=${encodeURIComponent(status)}`),
+  reviewCorrection: (id, decision, comment) =>
+    post(`/api/admin/corrections/${id}/review`, { decision, comment }),
+  patterns:    ()              => get('/api/admin/patterns'),
   resolveFlag: (id)            => post(`/api/admin/anomalies/${id}/resolve`),
   exportFull:  (params = {})   => {
     const q = new URLSearchParams(params).toString()
